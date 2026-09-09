@@ -59,8 +59,9 @@ build_queue(const std::map<char, int> &counter) {
   return queue;
 }
 
-Node *build_graph(
-    std::priority_queue<Node *, std::vector<Node *>, MinHeapCompare> &queue) {
+Node *build_graph(const std::map<char, int> &counter) {
+  std::priority_queue<Node *, std::vector<Node *>, MinHeapCompare> queue =
+      build_queue(counter);
 
   Node *left;
   Node *right;
@@ -98,47 +99,63 @@ std::map<char, std::string> build_table(Node *node, std::string code,
   return table;
 }
 
-std::map<std::string, std::string>
-build_reverse_huffman_table(std::string &table_encoding) {
-  std::map<std::string, std::string> reverse_huffman_table;
+std::map<std::string, std::string> build_decode_table(std::string &table) {
+  std::map<std::string, std::string> decode_table;
 
   std::string buffer;
   int splitter;
   std::string key;
   std::string value;
-  for (size_t i = 0; i < table_encoding.size(); i++) {
-    if (table_encoding[i] == ';') {
+  for (size_t i = 0; i < table.size(); i++) {
+    if (table[i] == ';') {
       splitter = buffer.find(":");
 
       key = buffer.substr(0, splitter);
       value = buffer.substr(splitter + 1);
 
-      reverse_huffman_table[value] = key;
+      decode_table[value] = key;
 
       buffer = "";
     } else {
-      buffer += table_encoding[i];
+      buffer += table[i];
     }
   }
 
-  return reverse_huffman_table;
+  return decode_table;
 }
 
-std ::string
-decode_encoded_content(std::string &content,
-                       std::map<std::string, std::string> &huffman_table) {
-  std::string buffer = "";
-  std::string output_content;
+std::string build_encoded_table(std::map<char, std::string> &table) {
+  std::string encoded_table;
+
+  for (const auto &item : table) {
+    encoded_table = encoded_table + item.first + ":" + item.second + ";";
+  }
+  return encoded_table;
+}
+
+std::string build_encoded_content(std::string &content,
+                                  std::map<char, std::string> table) {
+  std::string encoded_content;
+  for (const char c : content) {
+    encoded_content += table[c];
+  }
+  return encoded_content;
+}
+
+std ::string decode_encoded_content(std::string &content,
+                                    std::map<std::string, std::string> &table) {
+  std::string buffer;
+  std::string output;
   for (size_t i = 0; i < content.size(); i++) {
     buffer += content[i];
 
-    if (huffman_table.count(buffer)) {
-      output_content += huffman_table[buffer];
+    if (table.count(buffer)) {
+      output += table[buffer];
       buffer = "";
     }
   }
 
-  return output_content;
+  return output;
 }
 
 int main(int argc, char *argv[]) {
@@ -195,12 +212,11 @@ int main(int argc, char *argv[]) {
   }
 
   std::map<char, int> counter;
-  std::priority_queue<Node *, std::vector<Node *>, MinHeapCompare> queue;
   Node *head;
   std::map<char, std::string> huffman_table;
-  std::map<std::string, std::string> reverse_huffman_table;
-  std::string table_encoding;
-  std::string content_encoding;
+  std::map<std::string, std::string> decode_table;
+  std::string encoded_table;
+  std::string encoded_content;
   std::string output_content;
   if (mode == "encode") {
     if (input_path.empty() or bin_path.empty()) {
@@ -219,23 +235,17 @@ int main(int argc, char *argv[]) {
 
     std::string content((std::istreambuf_iterator<char>(input_file)),
                         (std::istreambuf_iterator<char>()));
+
     counter = build_counter_map(content);
-
-    queue = build_queue(counter);
-    head = build_graph(queue);
+    head = build_graph(counter);
     huffman_table = build_table(head, "", huffman_table);
-    for (const auto &item : huffman_table) {
-      table_encoding = table_encoding + item.first + ":" + item.second + ";";
-    }
+    encoded_table = build_encoded_table(huffman_table);
+    encoded_content = build_encoded_content(content, huffman_table);
     free(head);
-
-    for (const char c : content) {
-      content_encoding += huffman_table[c];
-    }
 
     std::ofstream bin_file;
     bin_file.open(bin_path);
-    bin_file << table_encoding << ";;" << content_encoding;
+    bin_file << encoded_table << ";;" << encoded_content;
     bin_file.close();
   } else if (mode == "decode") {
     if (output_path.empty() or bin_path.empty()) {
@@ -257,18 +267,16 @@ int main(int argc, char *argv[]) {
                         (std::istreambuf_iterator<char>()));
 
     int delimter_location = content.find(";;;");
-    table_encoding = content.substr(0, delimter_location + 1);
-    content_encoding = content.substr(delimter_location + 3);
+    encoded_table = content.substr(0, delimter_location + 1);
+    encoded_content = content.substr(delimter_location + 3);
 
-    reverse_huffman_table = build_reverse_huffman_table(table_encoding);
-    output_content =
-        decode_encoded_content(content_encoding, reverse_huffman_table);
+    decode_table = build_decode_table(encoded_table);
+    output_content = decode_encoded_content(encoded_content, decode_table);
 
     std::ofstream output_file;
     output_file.open(output_path);
     output_file << output_content;
     output_file.close();
-
   } else {
     std::cerr << "No argument matches the comamands please consult the help "
                  "message\n";
