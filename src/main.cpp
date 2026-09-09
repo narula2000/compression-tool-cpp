@@ -1,11 +1,11 @@
-#include <cstddef>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <iterator>
 #include <map>
-#include <queue>
 #include <string>
+
+#include "huffman.h"
 
 void print_help_message() {
   std::cout
@@ -19,143 +19,6 @@ void print_help_message() {
       << "\t-o, --output FILE\n\t\tOutput decompressed file (required for "
          "decode "
          "mode)\n";
-}
-
-std::map<char, int> build_counter_map(const std::string &content) {
-  std::map<char, int> counter;
-
-  for (const char c : content) {
-    counter[c]++;
-  }
-
-  return counter;
-}
-
-struct Node {
-  char character = '\0';
-  int frequency = 0;
-
-  Node *left = nullptr;
-  Node *right = nullptr;
-
-  Node(char character, int frequency)
-      : character(character), frequency(frequency) {}
-  Node(int frequency) : frequency(frequency) {}
-};
-
-struct MinHeapCompare {
-  bool operator()(const Node *a, const Node *b) const {
-    return a->frequency > b->frequency;
-  }
-};
-
-std::priority_queue<Node *, std::vector<Node *>, MinHeapCompare>
-build_queue(const std::map<char, int> &counter) {
-  std::priority_queue<Node *, std::vector<Node *>, MinHeapCompare> queue;
-
-  for (const auto &item : counter) {
-    queue.push(new Node(item.first, item.second));
-  }
-  return queue;
-}
-
-Node *build_graph(const std::map<char, int> &counter) {
-  std::priority_queue<Node *, std::vector<Node *>, MinHeapCompare> queue =
-      build_queue(counter);
-
-  Node *left;
-  Node *right;
-  int frequency;
-  Node *head;
-  while (queue.size() > 1) {
-    left = queue.top();
-    queue.pop();
-    right = queue.top();
-    queue.pop();
-    frequency = left->frequency + right->frequency;
-
-    Node *dummy = new Node(frequency);
-    dummy->left = left;
-    dummy->right = right;
-    queue.push(dummy);
-  }
-
-  head = queue.top();
-  queue.pop();
-
-  return head;
-}
-
-std::map<char, std::string> build_table(Node *node, std::string code,
-                                        std::map<char, std::string> &table) {
-  if (node != nullptr) {
-    if (node->character) {
-      table[node->character] = code;
-    }
-    build_table(node->left, code + "0", table);
-    build_table(node->right, code + "1", table);
-  }
-
-  return table;
-}
-
-std::map<std::string, std::string> build_decode_table(std::string &table) {
-  std::map<std::string, std::string> decode_table;
-
-  std::string buffer;
-  int splitter;
-  std::string key;
-  std::string value;
-  for (size_t i = 0; i < table.size(); i++) {
-    if (table[i] == ';') {
-      splitter = buffer.find(":");
-
-      key = buffer.substr(0, splitter);
-      value = buffer.substr(splitter + 1);
-
-      decode_table[value] = key;
-
-      buffer = "";
-    } else {
-      buffer += table[i];
-    }
-  }
-
-  return decode_table;
-}
-
-std::string build_encoded_table(std::map<char, std::string> &table) {
-  std::string encoded_table;
-
-  for (const auto &item : table) {
-    encoded_table = encoded_table + item.first + ":" + item.second + ";";
-  }
-  return encoded_table;
-}
-
-std::string build_encoded_content(std::string &content,
-                                  std::map<char, std::string> table) {
-  std::string encoded_content;
-  for (const char c : content) {
-    encoded_content += table[c];
-  }
-  return encoded_content;
-}
-
-std ::string decode_encoded_content(std::string &content,
-                                    std::map<std::string, std::string> &table) {
-  std::string buffer;
-  std::string output;
-  for (size_t i = 0; i < content.size(); i++) {
-    buffer += content[i];
-
-    if (table.count(buffer)) {
-      output += table[buffer];
-      buffer = "";
-    }
-  }
-
-  return output;
 }
 
 int main(int argc, char *argv[]) {
@@ -214,9 +77,9 @@ int main(int argc, char *argv[]) {
   std::map<char, int> counter;
   Node *head;
   std::map<char, std::string> huffman_table;
-  std::map<std::string, std::string> decode_table;
   std::string encoded_table;
   std::string encoded_content;
+  std::map<std::string, std::string> decode_table;
   std::string output_content;
   if (mode == "encode") {
     if (input_path.empty() or bin_path.empty()) {
@@ -236,7 +99,7 @@ int main(int argc, char *argv[]) {
     std::string content((std::istreambuf_iterator<char>(input_file)),
                         (std::istreambuf_iterator<char>()));
 
-    counter = build_counter_map(content);
+    counter = build_counter(content);
     head = build_graph(counter);
     huffman_table = build_table(head, "", huffman_table);
     encoded_table = build_encoded_table(huffman_table);
@@ -265,13 +128,7 @@ int main(int argc, char *argv[]) {
 
     std::string content((std::istreambuf_iterator<char>(bin_file)),
                         (std::istreambuf_iterator<char>()));
-
-    int delimter_location = content.find(";;;");
-    encoded_table = content.substr(0, delimter_location + 1);
-    encoded_content = content.substr(delimter_location + 3);
-
-    decode_table = build_decode_table(encoded_table);
-    output_content = decode_encoded_content(encoded_content, decode_table);
+    output_content = decode_raw_content(content);
 
     std::ofstream output_file;
     output_file.open(output_path);

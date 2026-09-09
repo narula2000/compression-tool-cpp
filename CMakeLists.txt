@@ -11,10 +11,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(compressor
     src/main.cpp
+    src/huffman.cpp
 )
 
-if(MSVC)
-  target_compile_options(compressor PRIVATE /W4 /WX)
-else()
-  target_compile_options(compressor PRIVATE -Wall -Wextra -Wpedantic -Werror)
-endif()
+target_compile_options(compressor PRIVATE -Wall -Wextra -Wpedantic -Werror)
