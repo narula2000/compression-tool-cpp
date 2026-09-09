@@ -3,6 +3,8 @@
 This repo is created as a part of the [codingchallenges.fyi](https://codingchallenges.fyi/challenges/intro) challenges.
 This repo specifically tackle the [challenge](https://codingchallenges.fyi/challenges/challenge-huffman/) of implementing a compression tool via Huffman code with C++.
 
+> Note: This repo hasn't include the conversion from binary string to byte data for the compressed binary file. This project was a C++ translation of the existing [Python implementation](https://github.com/narula2000/compression-tool).
+
 ## The Challenge
 
 Build your own file compression tool via Huffman code.
