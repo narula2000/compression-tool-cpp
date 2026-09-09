@@ -1,4 +1,8 @@
+#include <fstream>
+#include <functional>
 #include <iostream>
+#include <map>
+#include <queue>
 #include <string>
 
 void print_help_message() {
@@ -13,6 +17,44 @@ void print_help_message() {
       << "\t-o, --output FILE\n\t\tOutput decompressed file (required for "
          "decode "
          "mode)\n";
+}
+
+std::map<char, int> build_counter_map(std::ifstream &file) {
+  char c;
+  std::map<char, int> counter;
+
+  while (file.get(c)) {
+    counter[c]++;
+  }
+
+  return counter;
+}
+
+struct Node {
+  char character;
+  int frequency;
+  Node *left = nullptr;
+  Node *right = nullptr;
+
+  Node(char character, int frequency)
+      : character(character), frequency(frequency) {}
+};
+
+struct MinHeapCompare {
+  bool operator()(const Node *a, const Node *b) const {
+    return a->frequency > b->frequency;
+  }
+};
+
+std::priority_queue<Node *, std::vector<Node *>, MinHeapCompare>
+build_graph(std::map<char, int> &counter) {
+  std::priority_queue<Node *, std::vector<Node *>, MinHeapCompare> queue;
+
+  for (auto item : counter) {
+    queue.push(new Node(item.first, item.second));
+  }
+
+  return queue;
 }
 
 int main(int argc, char *argv[]) {
@@ -66,7 +108,8 @@ int main(int argc, char *argv[]) {
     }
     i++;
   }
-
+  std::map<char, int> counter;
+  std::priority_queue<Node *, std::vector<Node *>, MinHeapCompare> queue;
   if (mode == "encode") {
     if (input_path.empty() or bin_path.empty()) {
       std::cout << "Please provide a file input and a binary output path\n";
@@ -75,6 +118,22 @@ int main(int argc, char *argv[]) {
 
     std::cout << "Input Path: " << input_path << "\n";
     std::cout << "Bin Path: " << bin_path << "\n";
+
+    std::ifstream input_file(input_path);
+    if (!input_file) {
+      std::cout << "Please provide a valid file input\n";
+      return 1;
+    }
+
+    counter = build_counter_map(input_file);
+
+    queue = build_graph(counter);
+    Node *node;
+    while (!queue.empty()) {
+      node = queue.top();
+      queue.pop();
+      std::cout << node->character << " : " << node->frequency << "\n";
+    }
   } else if (mode == "decode") {
     if (output_path.empty() or bin_path.empty()) {
       std::cout
