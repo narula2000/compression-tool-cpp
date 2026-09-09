@@ -40,9 +40,10 @@
 *.app
 
 # Build directories
-build/
-Build/
+build/*
+Build/*
 build-*/
+!build/.gitkeep
 
 # CMake generated files
 CMakeFiles/
