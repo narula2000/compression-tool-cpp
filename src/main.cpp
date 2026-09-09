@@ -1,5 +1,4 @@
 #include <fstream>
-#include <functional>
 #include <iostream>
 #include <map>
 #include <queue>
@@ -19,11 +18,21 @@ void print_help_message() {
          "mode)\n";
 }
 
-std::map<char, int> build_counter_map(std::ifstream &file) {
+std::string read_file_content(std::ifstream &file) {
+  char c;
+  std::string content;
+  while (file.get(c)) {
+    content += c;
+  }
+  file.close();
+  return content;
+}
+
+std::map<char, int> build_counter_map(std::string &content) {
   char c;
   std::map<char, int> counter;
 
-  while (file.get(c)) {
+  for (char c : content) {
     counter[c]++;
   }
 
@@ -83,6 +92,19 @@ Node *build_graph(
   return head;
 }
 
+std::map<char, std::string> build_table(Node *node, std::string code,
+                                        std::map<char, std::string> &table) {
+  if (node != nullptr) {
+    if (node->character) {
+      table[node->character] = code;
+    }
+    build_table(node->left, code + "0", table);
+    build_table(node->right, code + "1", table);
+  }
+
+  return table;
+}
+
 int main(int argc, char *argv[]) {
   if (argc < 2) {
     print_help_message();
@@ -134,9 +156,16 @@ int main(int argc, char *argv[]) {
     }
     i++;
   }
+
+  std::string content;
   std::map<char, int> counter;
   std::priority_queue<Node *, std::vector<Node *>, MinHeapCompare> queue;
   Node *head;
+  std::map<char, std::string> huffman_table;
+  std::map<std::string, std::string> reverse_huffman_table;
+  std::string table_encoding;
+  std::string content_encoding;
+  std::string output_content;
   if (mode == "encode") {
     if (input_path.empty() or bin_path.empty()) {
       std::cout << "Please provide a file input and a binary output path\n";
@@ -152,10 +181,24 @@ int main(int argc, char *argv[]) {
       return 1;
     }
 
-    counter = build_counter_map(input_file);
+    content = read_file_content(input_file);
+    counter = build_counter_map(content);
 
     queue = build_queue(counter);
     head = build_graph(queue);
+    huffman_table = build_table(head, "", huffman_table);
+    for (auto item : huffman_table) {
+      table_encoding = table_encoding + item.first + ":" + item.second + ";";
+    }
+
+    for (char c : content) {
+      content_encoding += huffman_table[c];
+    }
+
+    std::ofstream bin_file;
+    bin_file.open(bin_path);
+    bin_file << table_encoding << ";;" << content_encoding;
+    bin_file.close();
   } else if (mode == "decode") {
     if (output_path.empty() or bin_path.empty()) {
       std::cout
@@ -165,6 +208,53 @@ int main(int argc, char *argv[]) {
 
     std::cout << "Output Path: " << output_path << "\n";
     std::cout << "Bin Path: " << bin_path << "\n";
+
+    std::ifstream bin_file(bin_path);
+    if (!bin_file) {
+      std::cout << "Please provide a valid binary file input\n";
+      return 1;
+    }
+
+    content = read_file_content(bin_file);
+
+    int delimter_location = content.find(";;;");
+    table_encoding = content.substr(0, delimter_location + 1);
+    content_encoding = content.substr(delimter_location + 3);
+
+    std::string buffer;
+    int splitter;
+    std::string key;
+    std::string value;
+    for (int i = 0; i < table_encoding.size(); i++) {
+      if (table_encoding[i] == ';') {
+        splitter = buffer.find(":");
+
+        key = buffer.substr(0, splitter);
+        value = buffer.substr(splitter + 1);
+
+        reverse_huffman_table[value] = key;
+
+        buffer = "";
+      } else {
+        buffer += table_encoding[i];
+      }
+    }
+
+    buffer = "";
+    for (int i = 0; i < content_encoding.size(); i++) {
+      buffer += content_encoding[i];
+
+      if (reverse_huffman_table.count(buffer)) {
+        output_content = output_content + reverse_huffman_table[buffer];
+        buffer = "";
+      }
+    }
+
+    std::ofstream output_file;
+    output_file.open(output_path);
+    output_file << output_content;
+    output_file.close();
+
   } else {
     std::cout << "No argument matches the comamands please consult the help "
                  "message\n";
