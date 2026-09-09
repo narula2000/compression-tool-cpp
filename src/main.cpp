@@ -44,6 +44,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Please provide a file to compress\n";
         return 1;
       }
+
       input_path = argv[i + 1];
       i++;
     } else if (arg == "-b" or arg == "--bin") {
@@ -51,6 +52,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Please provide a binary path\n";
         return 1;
       }
+
       bin_path = argv[i + 1];
       i++;
     } else if (arg == "-o" or arg == "--output") {
@@ -58,6 +60,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Please provide a file output path\n";
         return 1;
       }
+
       output_path = argv[i + 1];
       i++;
     }
@@ -78,6 +81,7 @@ int main(int argc, char *argv[]) {
           << "Please provide a file output_path and a binary input path\n";
       return 1;
     }
+
     std::cout << "Output Path: " << output_path << "\n";
     std::cout << "Bin Path: " << bin_path << "\n";
   } else {
