@@ -79,7 +79,6 @@ int main(int argc, char *argv[]) {
   std::map<char, std::string> huffman_table;
   std::string encoded_table;
   std::string encoded_content;
-  std::map<std::string, std::string> decode_table;
   std::string output_content;
   if (mode == "encode") {
     if (input_path.empty() or bin_path.empty()) {
