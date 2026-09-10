@@ -15,6 +15,7 @@ add_executable(compressor
     src/cli.cpp
     src/file_handler.cpp
     src/huffman.cpp
+    src/huffman_tree.cpp
 )
 
 target_compile_options(compressor PRIVATE -Wall -Wextra -Wpedantic -Werror)

@@ -1,17 +1,8 @@
 #include <iostream>
-#include <string>
 
 #include "cli.h"
 #include "file_handler.h"
 #include "huffman.h"
-
-namespace {
-
-std::string bytesToString(const std::vector<uint8_t> &bytes) {
-  return std::string(reinterpret_cast<const char *>(bytes.data()), bytes.size());
-}
-
-} // namespace
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
@@ -39,13 +30,13 @@ int main(int argc, char *argv[]) {
       return 1;
     }
 
-    std::string input_content = bytesToString(*input);
-    const std::string encoded_content = build_encoded_file(input_content);
+    const auto compressed = huffman::compress(*input);
+    if (!compressed) {
+      std::cerr << "Failed to compress the input file\n";
+      return 1;
+    }
 
-    if (!io::writeFile(command.bin, std::span<const uint8_t>(
-                                        reinterpret_cast<const uint8_t *>(
-                                            encoded_content.data()),
-                                        encoded_content.size()))) {
+    if (!io::writeFile(command.bin, *compressed)) {
       std::cerr << "Failed to write the compressed file\n";
       return 1;
     }
@@ -59,13 +50,13 @@ int main(int argc, char *argv[]) {
       return 1;
     }
 
-    const std::string output_content =
-        decode_raw_content(bytesToString(*compressed));
+    const auto output = huffman::decompress(*compressed);
+    if (!output) {
+      std::cerr << "Failed to decompress the binary file\n";
+      return 1;
+    }
 
-    if (!io::writeFile(command.output, std::span<const uint8_t>(
-                                          reinterpret_cast<const uint8_t *>(
-                                              output_content.data()),
-                                          output_content.size()))) {
+    if (!io::writeFile(command.output, *output)) {
       std::cerr << "Failed to write the output file\n";
       return 1;
     }
