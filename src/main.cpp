@@ -25,60 +25,77 @@ int main(int argc, char *argv[]) {
     print_help_message();
     return 0;
   }
+  int i = 1;
 
-  int i = 0;
   std::string mode;
   std::string input_path;
   std::string bin_path;
   std::string output_path;
-  while (i < argc) {
-    std::string arg = argv[i];
 
-    if (arg == "-h" or arg == "--help") {
+  while (i < argc) {
+    const std::string arg = argv[i];
+
+    if (arg == "-h" || arg == "--help") {
       print_help_message();
       return 0;
-    } else if (arg == "-m" or arg == "--mode") {
-      if (i + 1 >= argc) {
-        std::cerr << "Please provide a mode [encode|decode]\n";
-        return 1;
-      }
-
-      mode = argv[i + 1];
-      i++;
-    } else if (arg == "-i" or arg == "--input") {
-      if (i + 1 >= argc) {
-        std::cerr << "Please provide a file to compress\n";
-        return 1;
-      }
-
-      input_path = argv[i + 1];
-      i++;
-    } else if (arg == "-b" or arg == "--bin") {
-      if (i + 1 >= argc) {
-        std::cerr << "Please provide a binary path\n";
-        return 1;
-      }
-
-      bin_path = argv[i + 1];
-      i++;
-    } else if (arg == "-o" or arg == "--output") {
-      if (i + 1 >= argc) {
-        std::cerr << "Please provide a file output path\n";
-        return 1;
-      }
-
-      output_path = argv[i + 1];
-      i++;
     }
-    i++;
-  }
 
-  if (mode == "encode") {
-    if (input_path.empty() or bin_path.empty()) {
-      std::cerr << "Please provide a file input and a binary output path\n";
+    if (i + 1 >= argc) {
+      std::cerr << "Error: " << arg << " requires a value\n";
       return 1;
     }
 
+    if (arg == "-m" || arg == "--mode") {
+      mode = argv[++i];
+    } else if (arg == "-i" || arg == "--input") {
+      input_path = argv[++i];
+    } else if (arg == "-b" || arg == "--bin") {
+      bin_path = argv[++i];
+    } else if (arg == "-o" || arg == "--output") {
+      output_path = argv[++i];
+    } else {
+      std::cerr << "Error: unknown argument: " << arg << '\n';
+      return 1;
+    }
+
+    ++i;
+  }
+
+  if (mode.empty()) {
+    std::cerr << "Error: mode is required\n";
+    return 1;
+  }
+
+  if (mode != "encode" && mode != "decode") {
+    std::cerr << "Error: mode must be 'encode' or 'decode'\n";
+    return 1;
+  }
+
+  if (mode == "encode") {
+    if (input_path.empty()) {
+      std::cerr << "Error: input path is required for encode mode\n";
+      return 1;
+    }
+
+    if (bin_path.empty()) {
+      std::cerr << "Error: binary path is required for encode mode\n";
+      return 1;
+    }
+  }
+
+  if (mode == "decode") {
+    if (bin_path.empty()) {
+      std::cerr << "Error: binary path is required for decode mode\n";
+      return 1;
+    }
+
+    if (output_path.empty()) {
+      std::cerr << "Error: output path is required for decode mode\n";
+      return 1;
+    }
+  }
+
+  if (mode == "encode") {
     std::cout << "Input Path: " << input_path << "\n";
     std::cout << "Bin Path: " << bin_path << "\n";
 
@@ -97,12 +114,6 @@ int main(int argc, char *argv[]) {
     bin_file << encoded_file_content;
     bin_file.close();
   } else if (mode == "decode") {
-    if (output_path.empty() or bin_path.empty()) {
-      std::cerr
-          << "Please provide a file output_path and a binary input path\n";
-      return 1;
-    }
-
     std::cout << "Bin Path: " << bin_path << "\n";
     std::cout << "Output Path: " << output_path << "\n";
 

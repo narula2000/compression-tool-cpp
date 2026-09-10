@@ -2,8 +2,6 @@
 
 #include <cstddef>
 #include <cstdlib>
-#include <map>
-#include <queue>
 #include <string>
 
 struct Node {
@@ -26,4 +24,4 @@ struct MinHeapCompare {
 
 std::string build_encoded_file(std::string &content);
 
-std ::string decode_raw_content(std::string &raw_content);
+std ::string decode_raw_content(const std::string &raw_content);

@@ -54,6 +54,16 @@ Node *build_graph(const std::map<char, int> &counter) {
   return head;
 }
 
+void delete_graph(Node *node) {
+  if (node == nullptr) {
+    return;
+  }
+
+  delete_graph(node->left);
+  delete_graph(node->right);
+  delete node;
+}
+
 std::map<char, std::string> build_table(Node *node, std::string code,
                                         std::map<char, std::string> &table) {
   if (node != nullptr) {
@@ -76,8 +86,8 @@ std::string build_encoded_table(std::map<char, std::string> &table) {
   return encoded_table;
 }
 
-std::string build_encoded_content(std::string &content,
-                                  std::map<char, std::string> table) {
+std::string build_encoded_content(const std::string &content,
+                                  std::map<char, std::string> &table) {
   std::string encoded_content;
   for (const char c : content) {
     encoded_content += table[c];
@@ -88,21 +98,22 @@ std::string build_encoded_content(std::string &content,
 std::string build_encoded_file(std::string &content) {
   auto counter = build_counter(content);
   auto head = build_graph(counter);
-  std::map<char, std::string> huffman_table =
-      build_table(head, "", huffman_table);
-  ;
-  free(head);
+  std::map<char, std::string> huffman_table;
+  build_table(head, "", huffman_table);
+  delete_graph(head);
   return build_encoded_table(huffman_table) + ";;" +
          build_encoded_content(content, huffman_table);
 }
 
-std::tuple<std::string, std::string> split_raw_content(std::string &content) {
+std::tuple<std::string, std::string>
+split_raw_content(const std::string &content) {
   int delimter_location = content.find(";;;");
   return {content.substr(0, delimter_location + 1),
           content.substr(delimter_location + 3)};
 }
 
-std::map<std::string, std::string> build_decode_table(std::string &table) {
+std::map<std::string, std::string>
+build_decode_table(const std::string &table) {
   std::map<std::string, std::string> decode_table;
 
   std::string buffer;
@@ -127,7 +138,7 @@ std::map<std::string, std::string> build_decode_table(std::string &table) {
   return decode_table;
 }
 
-std ::string decode_raw_content(std::string &raw_content) {
+std ::string decode_raw_content(const std::string &raw_content) {
 
   std::string encoded_table;
   std::string content;
