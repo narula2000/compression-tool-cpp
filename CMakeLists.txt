@@ -18,4 +18,24 @@ add_executable(compressor
     src/huffman_tree.cpp
 )
 
+target_include_directories(compressor PRIVATE src)
+
 target_compile_options(compressor PRIVATE -Wall -Wextra -Wpedantic -Werror)
+
+include(CTest)
+
+if(BUILD_TESTING)
+    add_executable(compressor_tests
+        tests/tests.cpp
+        src/cli.cpp
+        src/file_handler.cpp
+        src/huffman.cpp
+        src/huffman_tree.cpp
+    )
+
+    target_include_directories(compressor_tests PRIVATE src)
+
+    target_compile_options(compressor_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
+
+    add_test(NAME compressor_tests COMMAND compressor_tests)
+endif()
