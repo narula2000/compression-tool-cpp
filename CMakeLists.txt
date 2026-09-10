@@ -12,6 +12,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(compressor
     src/main.cpp
+    src/cli.cpp
     src/file_handler.cpp
     src/huffman.cpp
 )
