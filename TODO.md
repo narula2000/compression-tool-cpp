@@ -8,20 +8,20 @@
 - [X] Create a compressed text which include the table and encoded content
 - [X] Read the compressed text to extract the table, and the content
 - [X] Output the content from the compressed text
-- [ ] Link the functions cleanly to the CLI loop
+- [X] Link the functions cleanly to the CLI loop
 - [ ] Refactor from using text content to a binary file
 
 # Code Review Improvements
 
 ## Bugs
-- [ ] ~~Fix delimiter mismatch: encoder writes `;;` but decoder searches for `;;;` (main.cpp:200 vs 220)~~
+- [ ] Fix delimiter mismatch: encoder writes `;;` but decoder searches for `;;;` (main.cpp:200 vs 220)
 - [X] Add missing `i++` in `-m`/`--mode` CLI parser (main.cpp:125-131)
 - [X] Initialize `character` to `'\0'` in `Node(int frequency)` constructor (main.cpp:50)
 - [X] Remove shadowed `char c;` in `build_counter_map` (main.cpp:32)
 - [X] Fix memory leaks: free Huffman tree nodes after use
 
 ## Architecture
-- [ ] Split `main.cpp` into separate files: `huffman.h/cpp`, `cli.cpp`, `main.cpp`
+- [X] Split `main.cpp` into separate files: `huffman.h/cpp`, `main.cpp`
 - [ ] ~~Use `std::unique_ptr<Node>` for Huffman tree node ownership~~
 - [ ] ~~Implement real binary packing (bits into bytes) instead of text-based `0`/`1` characters~~
 - [X] Replace `read_file_content` with `std::istreambuf_iterator`

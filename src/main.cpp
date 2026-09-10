@@ -2,7 +2,6 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
-#include <map>
 #include <string>
 
 #include "huffman.h"
@@ -74,12 +73,6 @@ int main(int argc, char *argv[]) {
     i++;
   }
 
-  std::map<char, int> counter;
-  Node *head;
-  std::map<char, std::string> huffman_table;
-  std::string encoded_table;
-  std::string encoded_content;
-  std::string output_content;
   if (mode == "encode") {
     if (input_path.empty() or bin_path.empty()) {
       std::cerr << "Please provide a file input and a binary output path\n";
@@ -97,17 +90,11 @@ int main(int argc, char *argv[]) {
 
     std::string content((std::istreambuf_iterator<char>(input_file)),
                         (std::istreambuf_iterator<char>()));
-
-    counter = build_counter(content);
-    head = build_graph(counter);
-    huffman_table = build_table(head, "", huffman_table);
-    encoded_table = build_encoded_table(huffman_table);
-    encoded_content = build_encoded_content(content, huffman_table);
-    free(head);
+    std::string encoded_file_content = build_encoded_file(content);
 
     std::ofstream bin_file;
     bin_file.open(bin_path);
-    bin_file << encoded_table << ";;" << encoded_content;
+    bin_file << encoded_file_content;
     bin_file.close();
   } else if (mode == "decode") {
     if (output_path.empty() or bin_path.empty()) {
@@ -127,7 +114,7 @@ int main(int argc, char *argv[]) {
 
     std::string content((std::istreambuf_iterator<char>(bin_file)),
                         (std::istreambuf_iterator<char>()));
-    output_content = decode_raw_content(content);
+    std::string output_content = decode_raw_content(content);
 
     std::ofstream output_file;
     output_file.open(output_path);

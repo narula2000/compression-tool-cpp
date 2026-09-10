@@ -85,6 +85,17 @@ std::string build_encoded_content(std::string &content,
   return encoded_content;
 }
 
+std::string build_encoded_file(std::string &content) {
+  auto counter = build_counter(content);
+  auto head = build_graph(counter);
+  std::map<char, std::string> huffman_table =
+      build_table(head, "", huffman_table);
+  ;
+  free(head);
+  return build_encoded_table(huffman_table) + ";;" +
+         build_encoded_content(content, huffman_table);
+}
+
 std::tuple<std::string, std::string> split_raw_content(std::string &content) {
   int delimter_location = content.find(";;;");
   return {content.substr(0, delimter_location + 1),
