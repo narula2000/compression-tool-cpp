@@ -1,27 +1,14 @@
 #pragma once
 
-#include <cstddef>
-#include <cstdlib>
-#include <string>
+#include <cstdint>
+#include <optional>
+#include <span>
+#include <vector>
 
-struct Node {
-  char character = '\0';
-  int frequency = 0;
+namespace huffman {
 
-  Node *left = nullptr;
-  Node *right = nullptr;
+std::optional<std::vector<uint8_t>> compress(std::span<const uint8_t> data);
 
-  Node(char character, int frequency)
-      : character(character), frequency(frequency) {}
-  Node(int frequency) : frequency(frequency) {}
-};
+std::optional<std::vector<uint8_t>> decompress(std::span<const uint8_t> data);
 
-struct MinHeapCompare {
-  bool operator()(const Node *a, const Node *b) const {
-    return a->frequency > b->frequency;
-  }
-};
-
-std::string build_encoded_file(std::string &content);
-
-std ::string decode_raw_content(const std::string &raw_content);
+} // namespace huffman

@@ -1,141 +1,65 @@
-#include <cstdlib>
-#include <fstream>
 #include <iostream>
-#include <iterator>
-#include <string>
 
+#include "cli.h"
+#include "file_handler.h"
 #include "huffman.h"
-
-void print_help_message() {
-  std::cout
-      << "Usage: compressor [-m|-i|-b|-o] FILE\n"
-      << "\t-m, --mode {encode,decode}\n\t\tSelect operation mode.\n"
-      << "\t\tencode  Compress an input file into a binary file\n"
-      << "\t\tdecode  Decompress a binary file back to the original content\n"
-      << "\t-i, --input FILE\n\t\tInput file to compress (required for encode "
-         "mode)\n"
-      << "\t-b, --bin FILE\n\t\tCompressed binary file\n"
-      << "\t-o, --output FILE\n\t\tOutput decompressed file (required for "
-         "decode "
-         "mode)\n";
-}
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
-    print_help_message();
+    cli::printHelp(std::cout);
     return 0;
   }
-  int i = 1;
 
-  std::string mode;
-  std::string input_path;
-  std::string bin_path;
-  std::string output_path;
-
-  while (i < argc) {
-    const std::string arg = argv[i];
-
-    if (arg == "-h" || arg == "--help") {
-      print_help_message();
-      return 0;
-    }
-
-    if (i + 1 >= argc) {
-      std::cerr << "Error: " << arg << " requires a value\n";
-      return 1;
-    }
-
-    if (arg == "-m" || arg == "--mode") {
-      mode = argv[++i];
-    } else if (arg == "-i" || arg == "--input") {
-      input_path = argv[++i];
-    } else if (arg == "-b" || arg == "--bin") {
-      bin_path = argv[++i];
-    } else if (arg == "-o" || arg == "--output") {
-      output_path = argv[++i];
-    } else {
-      std::cerr << "Error: unknown argument: " << arg << '\n';
-      return 1;
-    }
-
-    ++i;
+  cli::Command command;
+  const cli::ParseResult result = cli::parseArgs(argc, argv, command);
+  if (result == cli::ParseResult::Help) {
+    cli::printHelp(std::cout);
+    return 0;
   }
-
-  if (mode.empty()) {
-    std::cerr << "Error: mode is required\n";
+  if (result == cli::ParseResult::Error) {
     return 1;
   }
 
-  if (mode != "encode" && mode != "decode") {
-    std::cerr << "Error: mode must be 'encode' or 'decode'\n";
-    return 1;
-  }
+  if (command.mode == cli::Mode::Encode) {
+    std::cout << "Input Path: " << command.input.string() << "\n";
+    std::cout << "Bin Path: " << command.bin.string() << "\n";
 
-  if (mode == "encode") {
-    if (input_path.empty()) {
-      std::cerr << "Error: input path is required for encode mode\n";
-      return 1;
-    }
-
-    if (bin_path.empty()) {
-      std::cerr << "Error: binary path is required for encode mode\n";
-      return 1;
-    }
-  }
-
-  if (mode == "decode") {
-    if (bin_path.empty()) {
-      std::cerr << "Error: binary path is required for decode mode\n";
-      return 1;
-    }
-
-    if (output_path.empty()) {
-      std::cerr << "Error: output path is required for decode mode\n";
-      return 1;
-    }
-  }
-
-  if (mode == "encode") {
-    std::cout << "Input Path: " << input_path << "\n";
-    std::cout << "Bin Path: " << bin_path << "\n";
-
-    std::ifstream input_file(input_path);
-    if (!input_file) {
+    const auto input = io::readFile(command.input);
+    if (!input) {
       std::cerr << "Please provide a valid file input\n";
       return 1;
     }
 
-    std::string content((std::istreambuf_iterator<char>(input_file)),
-                        (std::istreambuf_iterator<char>()));
-    std::string encoded_file_content = build_encoded_file(content);
+    const auto compressed = huffman::compress(*input);
+    if (!compressed) {
+      std::cerr << "Failed to compress the input file\n";
+      return 1;
+    }
 
-    std::ofstream bin_file;
-    bin_file.open(bin_path);
-    bin_file << encoded_file_content;
-    bin_file.close();
-  } else if (mode == "decode") {
-    std::cout << "Bin Path: " << bin_path << "\n";
-    std::cout << "Output Path: " << output_path << "\n";
+    if (!io::writeFile(command.bin, *compressed)) {
+      std::cerr << "Failed to write the compressed file\n";
+      return 1;
+    }
+  } else {
+    std::cout << "Bin Path: " << command.bin.string() << "\n";
+    std::cout << "Output Path: " << command.output.string() << "\n";
 
-    std::ifstream bin_file(bin_path);
-    if (!bin_file) {
+    const auto compressed = io::readFile(command.bin);
+    if (!compressed) {
       std::cerr << "Please provide a valid binary file input\n";
       return 1;
     }
 
-    std::string content((std::istreambuf_iterator<char>(bin_file)),
-                        (std::istreambuf_iterator<char>()));
-    std::string output_content = decode_raw_content(content);
+    const auto output = huffman::decompress(*compressed);
+    if (!output) {
+      std::cerr << "Failed to decompress the binary file\n";
+      return 1;
+    }
 
-    std::ofstream output_file;
-    output_file.open(output_path);
-    output_file << output_content;
-    output_file.close();
-  } else {
-    std::cerr << "No argument matches the comamands please consult the help "
-                 "message\n";
-    print_help_message();
-    return 1;
+    if (!io::writeFile(command.output, *output)) {
+      std::cerr << "Failed to write the output file\n";
+      return 1;
+    }
   }
 
   return 0;
