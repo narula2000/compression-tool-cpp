@@ -9,12 +9,12 @@
 - [X] Read the compressed text to extract the table, and the content
 - [X] Output the content from the compressed text
 - [X] Link the functions cleanly to the CLI loop
-- [ ] Refactor from using text content to a binary file
+- [X] Refactor from using text content to a binary file
 
 # Code Review Improvements
 
 ## Bugs
-- [ ] Fix delimiter mismatch: encoder writes `;;` but decoder searches for `;;;` (main.cpp:200 vs 220)
+- [X] Fix delimiter mismatch: encoder writes `;;` but decoder searches for `;;;` (main.cpp:200 vs 220)
 - [X] Add missing `i++` in `-m`/`--mode` CLI parser (main.cpp:125-131)
 - [X] Initialize `character` to `'\0'` in `Node(int frequency)` constructor (main.cpp:50)
 - [X] Remove shadowed `char c;` in `build_counter_map` (main.cpp:32)
@@ -22,8 +22,8 @@
 
 ## Architecture
 - [X] Split `main.cpp` into separate files: `huffman.h/cpp`, `main.cpp`
-- [ ] ~~Use `std::unique_ptr<Node>` for Huffman tree node ownership~~
-- [ ] ~~Implement real binary packing (bits into bytes) instead of text-based `0`/`1` characters~~
+- [X] Replace raw `Node*` ownership with `std::shared_ptr<Node>` Huffman tree
+- [X] Implement real binary packing (bits into bytes) instead of text-based `0`/`1` characters
 - [X] Replace `read_file_content` with `std::istreambuf_iterator`
 
 ## Style & Robustness
@@ -33,5 +33,5 @@
 - [X] Add compiler warnings: `-Wall -Wextra -Wpedantic`
 
 ## Testing & Edge Cases
-- [ ] Add roundtrip test (encode then decode, compare to original)
-- [ ] Handle edge cases: empty file, single unique character
+- [X] Add roundtrip test (encode then decode, compare to original)
+- [X] Handle edge cases: empty file, single unique character
